@@ -47,7 +47,6 @@ detection_eval.py          évalue le détecteur            (modèle + images ->
 classification_train.py    entraîne le classifieur        (images + XML -> models/classification.pt)
 classification_eval.py     évalue le classifieur          (modèle + images -> JSON, précision / rappel / F1)
 pipeline_predict.py        chaîne complète                (images -> JSON au format du prof)
-validation_locale.py       reproduit le calcul de la page de validation du prof
 analyse_donnees.py         analyse du corpus
 app.py                     interface Streamlit
 Dockerfile, requirements.txt, .dockerignore
