@@ -1,6 +1,6 @@
 # Détection et classification d'avions sur images satellites
 
-Projet du module « Introduction à l'IA » (IPSA Toulouse, enseignant : Julien Breton).
+Projet du module « Introduction à l'IA ».
 
 L'application localise les avions dans une image satellite, puis détermine leur type (20 classes, `A1` à `A20`).
 
@@ -122,7 +122,7 @@ docker build -t avions-app .
 docker run --rm -p 8501:8501 -v "<dossier du dataset>:/data" avions-app
 ```
 
-L'application est ensuite disponible sur http://localhost:8501. L'image contient le code et les deux modèles, PyTorch en version processeur ; le dataset est monté au lancement (`/data/images`, `/data/annotations`).
+L'application est ensuite disponible sur 'http://localhost:8501'. L'image contient le code et les deux modèles, PyTorch en version processeur ; le dataset est monté au lancement (`/data/images`, `/data/annotations`).
 
 ## Résultats
 
@@ -134,7 +134,7 @@ L'application est ensuite disponible sur http://localhost:8501. L'image contient
 | Classification (boîtes annotées) | accuracy 0,958 | | F1 macro 0,933 |
 | Chaîne complète | | | classification 0,948, global 0,939 |
 
-### Jeu de test du prof (2511 images, 14471 avions)
+### Jeu de test (2511 images, 14471 avions)
 
 | | Valeur |
 |---|---|
@@ -145,6 +145,6 @@ L'application est ensuite disponible sur http://localhost:8501. L'image contient
 ## Analyse et limites
 
 - La **détection généralise très bien** (F1 de 0,98 sur des images nouvelles).
-- La **classification chute** de 0,95 (nos images) à 0,79 (jeu du prof). Notre évaluation interne était trop optimiste : nos images d'évaluation sont probablement proches de celles d'entraînement (mêmes scènes), alors que le jeu de test en contient de nouvelles. Par exemple, A13 a un rappel de 0,99 en interne et de 0,46 sur le jeu du prof.
+- La **classification chute** de 0,95 (nos images) à 0,79 . Notre évaluation interne était trop optimiste : nos images d'évaluation sont probablement proches de celles d'entraînement (mêmes scènes), alors que le jeu de test en contient de nouvelles. Par exemple, A13 a un rappel de 0,99 en interne et de 0,46 sur le jeu du prof.
 - Les types **A15 et A5** sont confondus de façon systématique (rappel de A15 d'environ 0,4 à 0,5), probablement parce que les avions se ressemblent.
 - Pistes non réalisées : réduire la marge de découpe pour limiter l'influence du fond, augmentation de données plus forte, entraînement sur toutes les images, test-time augmentation.
