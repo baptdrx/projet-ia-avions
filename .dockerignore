@@ -1,0 +1,20 @@
+.venv
+.git
+runs
+Projet ia
+*.zip
+*.pdf
+*.json
+*.png
+yolov8s.pt
+__pycache__
+*.pyc
+student-dataset 2
+sortie_annotee
+erreurs_detection
+etape*.py
+affichage.py
+analyse_donn*.py
+prepa_donn*.py
+models/classification_resnet18.pt
+models/test_*.pt

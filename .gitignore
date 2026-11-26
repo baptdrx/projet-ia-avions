@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+student-dataset 2/
+eval-dataset/
+sortie_annotee/
+erreurs_detection/
+runs/
+resultats/images_*/
+*.zip
