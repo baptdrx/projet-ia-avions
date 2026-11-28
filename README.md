@@ -1,10 +1,12 @@
 # Détection et classification d'avions sur images satellites
 
-Projet du module « Introduction à l'IA ».
+Projet du module « Introduction à l'IA » (IPSA Toulouse).
 
 L'application localise les avions dans une image satellite, puis détermine leur type (20 classes, `A1` à `A20`).
 
-Auteurs : **Baptiste Darroux** et **Thomas Duprat** et **Matthias Delarue**
+Auteurs : **Baptiste Darroux**, **Thomas Duprat** et **Matthias Delarue**
+
+Le rapport complet est dans [`rapport/Rapport_Projet_IA_Detection_Classification_Avions.pdf`](rapport/Rapport_Projet_IA_Detection_Classification_Avions.pdf).
 
 ## Architecture
 
@@ -17,7 +19,7 @@ image 800x800
 Faster R-CNN (ResNet50-FPN)  ->  boîtes des avions (une seule classe : "avion")
    |
    v
-découpe carrée de chaque boîte (marge de 15 %, redimensionnée en 224x224)
+découpe carrée de chaque boîte (marge de 15 % de chaque côté, redimensionnée en 224x224)
    |
    v
 ResNet50  ->  type d'avion (A1 à A20) + confiance
@@ -34,9 +36,10 @@ JSON au format demandé / image annotée / interface Streamlit
 
 Entraînement :
 
-- **Détection** : 15 epochs, batch 4, SGD (lr 0,005, momentum 0,9), planification cosinus, montée progressive du learning rate, retournements horizontal et vertical, précision mixte.
-- **Classification** : deux phases (tête seule : 5 epochs à 1e-3, puis fine-tuning de tout le réseau : 10 epochs à 1e-4), Adam, batch 32, perte pondérée par classe (déséquilibre 107 à 785 exemplaires), augmentation (retournements, rotations quelconques, luminosité et contraste).
+- **Détection** : 15 epochs, batch 4, SGD (lr 0,005, momentum 0,9, weight decay 5e-4), montée progressive du learning rate (200 itérations) puis décroissance cosinus, retournements horizontal et vertical, précision mixte.
+- **Classification** : deux phases (tête seule : 5 epochs à 1e-3, puis fine-tuning de tout le réseau : 10 epochs à 1e-4), Adam, batch 32, perte pondérée par classe (déséquilibre de 107 à 785 exemplaires), augmentation (retournements, rotations quelconques, luminosité et contraste).
 - Dans les deux cas, on garde le **dernier** modèle (pas de sélection sur le jeu d'évaluation).
+- Environnement : Python 3.12, PyTorch avec CUDA, GPU RTX 4060 (8 Go). Environ 2 minutes par epoch pour la détection et 10 minutes au total pour la classification.
 
 ## Structure du dépôt
 
@@ -52,7 +55,19 @@ app.py                     interface Streamlit
 Dockerfile, requirements.txt, .dockerignore
 models/                    detection.pt, classification.pt  (Git LFS)
 resultats/                 JSON de prédictions, matrice de confusion, capture de la page de validation
+rapport/                   rapport du projet (PDF)
 ```
+
+## Récupérer le dépôt et les modèles (Git LFS)
+
+Les modèles (`models/*.pt`) sont stockés avec Git LFS. Il faut l'installer avant de cloner :
+
+```bash
+git lfs install
+git clone https://github.com/baptdrx/projet-ia-avions.git
+```
+
+Si les fichiers `.pt` ne font que quelques octets après le clonage, ce sont des pointeurs LFS : lancer `git lfs pull` dans le dépôt pour télécharger les vrais modèles.
 
 ## Installation
 
@@ -80,6 +95,8 @@ student-dataset 2/
 
 Les chemins peuvent être changés avec les variables d'environnement `IMAGES_DIR` et `XML_DIR`, ou avec les options `--images` et `--xml` des scripts.
 
+Le dossier `eval-dataset/` (2 511 images, **sans annotations**) sert uniquement de jeu de test : on lui applique la chaîne complète et on envoie le JSON obtenu à la page de validation de l'enseignant.
+
 ## Utilisation
 
 ```bash
@@ -92,7 +109,7 @@ python detection_eval.py
 python classification_eval.py
 
 # Chaîne complète sur un dossier d'images -> JSON au format du prof
-python pipeline_predict.py --images "eval-dataset/images" --out resultats/annotations_test.json
+python pipeline_predict.py --images "eval-dataset/images" --out resultats/annotations_predites.json
 
 # Interface graphique
 python -m streamlit run app.py
@@ -121,11 +138,11 @@ docker build -t avions-app .
 docker run --rm -p 8501:8501 -v "<dossier du dataset>:/data" avions-app
 ```
 
-L'application est ensuite disponible sur 'http://localhost:8501'. L'image contient le code et les deux modèles, PyTorch en version processeur ; le dataset est monté au lancement (`/data/images`, `/data/annotations`).
+L'application est ensuite disponible sur http://localhost:8501. L'image contient le code et les deux modèles, PyTorch en version processeur ; le dataset est monté au lancement (`/data/images`, `/data/annotations`). Les modèles étant sur Git LFS, il faut les avoir récupérés (`git lfs pull`) avant `docker build`.
 
 ## Résultats
 
-### Évaluation interne (400 images, 2331 avions, jamais vues à l'entraînement)
+### Évaluation interne (400 images, 2 331 avions, jamais vues à l'entraînement)
 
 | | Précision | Rappel | F1 |
 |---|---|---|---|
@@ -133,7 +150,7 @@ L'application est ensuite disponible sur 'http://localhost:8501'. L'image contie
 | Classification (boîtes annotées) | accuracy 0,958 | | F1 macro 0,933 |
 | Chaîne complète | | | classification 0,948, global 0,939 |
 
-### Jeu de test (2511 images, 14471 avions)
+### Jeu de test (2 511 images, 14 471 avions)
 
 | | Valeur |
 |---|---|
@@ -141,9 +158,25 @@ L'application est ensuite disponible sur 'http://localhost:8501'. L'image contie
 | Détection : précision / rappel / F1 | 0,9878 / 0,9730 / **0,9804** |
 | Classification : précision / rappel / F1 | 0,7940 / 0,7821 / **0,7880** |
 
+Classes les plus difficiles sur le jeu de test :
+
+| Classe | Précision | Rappel | F1 | Remarque |
+|---|---|---|---|---|
+| A5 | 0,47 | 0,86 | 0,61 | 792 faux positifs |
+| A13 | 0,87 | 0,46 | 0,61 | 584 faux négatifs |
+| A16 | 0,91 | 0,56 | 0,69 | 818 faux négatifs |
+| A15 | 0,58 | 0,52 | 0,55 | classe rare, confondue avec A5 |
+
+Fichiers de résultats (dossier `resultats/`) :
+
+- `annotations_predites.json` : prédictions de la chaîne complète sur le jeu de test (même contenu que `annotations_test.json`) ;
+- `confusion_classification.png` : matrice de confusion du classifieur sur l'évaluation interne ;
+- `predictions_detection.json`, `predictions_classification.json` : sorties des scripts d'évaluation interne ;
+- `validation_page_v1.png` : capture de la page de validation de l'enseignant.
+
 ## Analyse et limites
 
 - La **détection généralise très bien** (F1 de 0,98 sur des images nouvelles).
-- La **classification chute** de 0,95 (nos images) à 0,79 . Notre évaluation interne était trop optimiste : nos images d'évaluation sont probablement proches de celles d'entraînement (mêmes scènes), alors que le jeu de test en contient de nouvelles. Par exemple, A13 a un rappel de 0,99 en interne et de 0,46 sur le jeu du prof.
-- Les types **A15 et A5** sont confondus de façon systématique (rappel de A15 d'environ 0,4 à 0,5), probablement parce que les avions se ressemblent.
+- La **classification chute** de 0,95 (nos images) à 0,79 (jeu de test). Notre évaluation interne était trop optimiste : nos images d'évaluation sont probablement proches de celles d'entraînement (mêmes scènes), alors que le jeu de test en contient de nouvelles. Par exemple, A13 a un rappel de 0,99 en interne et de 0,46 sur le jeu de test, et A16 de 0,96 contre 0,56. Cette explication reste une hypothèse.
+- Les types **A15 et A5** sont confondus de façon systématique (A15 : rappel de 0,52 et F1 de 0,55 sur le jeu de test), probablement parce que les avions se ressemblent.
 - Pistes non réalisées : réduire la marge de découpe pour limiter l'influence du fond, augmentation de données plus forte, entraînement sur toutes les images, test-time augmentation.
