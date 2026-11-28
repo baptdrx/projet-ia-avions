@@ -6,7 +6,6 @@ L'application localise les avions dans une image satellite, puis détermine leur
 
 Auteurs : **Baptiste Darroux**, **Thomas Duprat** et **Matthias Delarue**
 
-Le rapport complet est dans [`rapport/Rapport_Projet_IA_Detection_Classification_Avions.pdf`](rapport/Rapport_Projet_IA_Detection_Classification_Avions.pdf).
 
 ## Architecture
 
